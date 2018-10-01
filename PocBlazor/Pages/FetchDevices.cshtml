@@ -1,0 +1,80 @@
+﻿@page "/fetchdevices"
+@inject HttpClient Http
+@inject Blazored.Storage.ILocalStorage localStorage
+
+<h1>List of your devices</h1>
+
+<p>This component demonstrates how to fetch data from C4M server.</p>
+
+@if (auth == null)
+{
+    <p><em>Looks like there is no C4M credentials stored, please inform a valid one:</em></p>
+
+    <form class="form-horizontal">
+        <div class="form-group">
+            <label class="col-sm-2 control-label" for="consumerKey">Consumer key: </label>
+            <div class="col-sm-10">
+                <input id="consumerKey" class="form-control" bind="@ConsumerKey" type="text" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label" for="consumerSecret">Consumer secret: </label>
+            <div class="col-sm-10">
+                <input id="consumerSecret" class="form-control" bind="@ConsumerSecret" type="text" />
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button class="btn btn-primary btn-lg" onclick="@SaveCredentials">Save</button>
+            </div>
+        </div>
+    </form>
+}
+else
+{
+    <p>This are the credentials used to access C4M API:</p>
+    <label class="control-label">Consumer Key: <em>@auth.ConsumerKey</em></label><br />
+    <label class="control-label">Consumer Secret: <em>@auth.ConsumerSecret</em></label><br />
+    <button class="btn btn-primary btn-lg" onclick="@ClearCredentials">Enter new credentials</button>
+}
+
+@functions {
+
+    class C4MAuthentication
+    {
+        public string ConsumerKey { get; set; }
+        public string ConsumerSecret { get; set; }
+    }
+
+    [Parameter]
+    private string ConsumerKey { get; set; }
+    [Parameter]
+    private string ConsumerSecret { get; set; }
+
+    C4MAuthentication auth;
+
+    protected override async Task OnInitAsync()
+    {
+        auth = await localStorage.GetItem<C4MAuthentication>("auth");
+    }
+
+    void SaveCredentials()
+    {
+        auth = new C4MAuthentication();
+        auth.ConsumerKey = ConsumerKey;
+        auth.ConsumerSecret = ConsumerSecret;
+
+        localStorage.SetItem("auth", auth);
+    }
+
+    void ClearCredentials()
+    {
+        localStorage.Clear();
+
+        auth = null;
+
+        ConsumerKey = "";
+        ConsumerSecret = "";
+
+    }
+}
