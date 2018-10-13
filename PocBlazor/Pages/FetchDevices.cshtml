@@ -1,80 +1,72 @@
 ﻿@page "/fetchdevices"
-@inject HttpClient Http
 @inject Blazored.Storage.ILocalStorage localStorage
+@inject HttpClient Http
 
 <h1>List of your devices</h1>
 
 <p>This component demonstrates how to fetch data from C4M server.</p>
 
-@if (auth == null)
+@if (string.IsNullOrEmpty(auth.ConsumerKey))
 {
-    <p><em>Looks like there is no C4M credentials stored, please inform a valid one:</em></p>
-
-    <form class="form-horizontal">
-        <div class="form-group">
-            <label class="col-sm-2 control-label" for="consumerKey">Consumer key: </label>
-            <div class="col-sm-10">
-                <input id="consumerKey" class="form-control" bind="@ConsumerKey" type="text" />
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="col-sm-2 control-label" for="consumerSecret">Consumer secret: </label>
-            <div class="col-sm-10">
-                <input id="consumerSecret" class="form-control" bind="@ConsumerSecret" type="text" />
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="col-sm-offset-2 col-sm-10">
-                <button class="btn btn-primary btn-lg" onclick="@SaveCredentials">Save</button>
-            </div>
-        </div>
-    </form>
+    <p><em>No credentials found. Please enter your credentiails in the left menu.</em></p>
 }
 else
 {
-    <p>This are the credentials used to access C4M API:</p>
-    <label class="control-label">Consumer Key: <em>@auth.ConsumerKey</em></label><br />
-    <label class="control-label">Consumer Secret: <em>@auth.ConsumerSecret</em></label><br />
-    <button class="btn btn-primary btn-lg" onclick="@ClearCredentials">Enter new credentials</button>
+    @if (devices.Any())
+    {
+        <TemplatedTable Items="@devices">
+            <TableHeader>
+                <th>ID</th>
+                <th>Alias</th>
+                <th>IMEI</th>
+            </TableHeader>
+            <RowTemplate Context="dev">
+                <td>@dev.Id</td>
+                <td>@dev.Alias</td>
+                <td>@dev.HardwareId</td>
+            </RowTemplate>
+        </TemplatedTable>
+    }
+    else
+    {
+        <p><em>Loading...</em></p>
+    }
 }
 
+
 @functions {
-
-    class C4MAuthentication
-    {
-        public string ConsumerKey { get; set; }
-        public string ConsumerSecret { get; set; }
-    }
-
-    [Parameter]
-    private string ConsumerKey { get; set; }
-    [Parameter]
-    private string ConsumerSecret { get; set; }
-
-    C4MAuthentication auth;
+    ConsumerCredentials auth = new ConsumerCredentials();
+    List<Device> devices = new List<Device>();
 
     protected override async Task OnInitAsync()
     {
-        auth = await localStorage.GetItem<C4MAuthentication>("auth");
+        auth = await localStorage.GetItem<ConsumerCredentials>("auth") ?? new ConsumerCredentials();
+        
+        if (string.IsNullOrEmpty(auth.ConsumerKey)) return;
+
+        Http.BaseAddress = new Uri("https://api.cloud4mobile.com.br/");
+
+        string url = "devices?$top=25";
+
+        try
+        {
+            var token = BearerTokenGenerator.GetBearerToken(auth, "GET", Http.BaseAddress + url);
+
+            Console.WriteLine(token);
+
+            Http.DefaultRequestHeaders.Accept.Clear();
+            Http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            Http.DefaultRequestHeaders.Remove("Authorization");
+            Http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+            devices = await Http.GetJsonAsync<List<Device>>(url);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+            Console.WriteLine(ex.StackTrace);
+        }
     }
 
-    void SaveCredentials()
-    {
-        auth = new C4MAuthentication();
-        auth.ConsumerKey = ConsumerKey;
-        auth.ConsumerSecret = ConsumerSecret;
-
-        localStorage.SetItem("auth", auth);
-    }
-
-    void ClearCredentials()
-    {
-        localStorage.Clear();
-
-        auth = null;
-
-        ConsumerKey = "";
-        ConsumerSecret = "";
-
-    }
 }

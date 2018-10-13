@@ -9,13 +9,20 @@
 
   <ItemGroup>
     <PackageReference Include="BlazoredLocalStorage" Version="0.3.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Blazor.Browser" Version="0.5.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Blazor.Build" Version="0.5.1" />
-    <DotNetCliToolReference Include="Microsoft.AspNetCore.Blazor.Cli" Version="0.5.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Blazor.Browser" Version="0.6.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Blazor.Build" Version="0.6.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <DotNetCliToolReference Include="Microsoft.AspNetCore.Blazor.Cli" Version="0.6.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="Pages\UserCredentials.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
     <Content Update="Pages\FetchDevices.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
+    <Content Update="Shared\TemplatedTable.cshtml">
       <Pack>$(IncludeRazorContentInPack)</Pack>
     </Content>
   </ItemGroup>
